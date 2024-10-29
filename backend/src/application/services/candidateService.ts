@@ -3,6 +3,9 @@ import { validateCandidateData } from '../validator';
 import { Education } from '../../domain/models/Education';
 import { WorkExperience } from '../../domain/models/WorkExperience';
 import { Resume } from '../../domain/models/Resume';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export const addCandidate = async (candidateData: any) => {
     try {
@@ -53,6 +56,27 @@ export const addCandidate = async (candidateData: any) => {
         }
     }
 };
+
+export const updateCandidateStage = async (candidateId: number, newStage: string) => {
+    const candidate = await prisma.candidate.findUnique({
+        where: { id: candidateId },
+    });
+
+    if (!candidate) {
+        throw new Error(`No candidate ${candidateId} exists`);
+    }
+
+    const updatedApplication = await prisma.application.updateMany({
+        where: { candidateId },
+        data: { currentInterviewStep: parseInt(newStage, 10) },
+    });
+
+    if (updatedApplication.count === 0) {
+        throw new Error(`Failed to update the stage for candidate ${candidateId}`);
+    }
+
+    return updatedApplication;
+}
 
 export const findCandidateById = async (id: number): Promise<Candidate | null> => {
     try {
